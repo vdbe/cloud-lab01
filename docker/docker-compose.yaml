@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+  get-data:
+    build:
+      context: ../scripts
+      dockerfile: ../docker/base.Dockerfile
+      args:
+        - FILE=get-files
+    tty: true
+    volumes:
+      - input:/usr/src/app/input
+      - imgs:/usr/src/app/imgs
+    
+  training:
+    build:
+      context: ../scripts
+      dockerfile: ../docker/base.Dockerfile
+      args:
+        - FILE=training
+        - IMAGE=fastai/fastai
+    tty: true
+    volumes:
+      - input:/usr/src/app/input
+      - imgs:/usr/src/app/imgs
+      - ../models:/usr/src/app/models
+
+    depends_on:
+      get-data:
+        condition: service_completed_successfully
+
+  interface:
+    build:
+      context: ../scripts
+      dockerfile: ../docker/base.Dockerfile
+      args:
+        - FILE=interface
+        - IMAGE=fastai/fastai
+    tty: true
+    ports:
+      - "80:7860"
+    volumes:
+      - input:/usr/src/app/input
+      - imgs:/usr/src/app/imgs
+      - ../models:/usr/src/app/models
+
+    depends_on:
+      training:
+        condition: service_completed_successfully
+      
+volumes:
+  input:
+  imgs:
